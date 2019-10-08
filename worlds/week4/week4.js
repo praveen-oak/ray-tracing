@@ -166,10 +166,10 @@ let inverse = src => {
   return dst;
 }
 
-// function translate(, x, y, z){
-//     let transformation_matrix = [1,0,0,0,  0,1,0,0,  0,0,1,0,  x,y,z,1];
-//     return multiply(transformation_matrix, [x, y, z, 1]).slice(0, 3);
-// }
+function translate(matrix, x, y, z){
+    let transformation_matrix = [1,0,0,0,  0,1,0,0,  0,0,1,0,  x,y,z,1];
+    return multiply(transformation_matrix, matrix);
+}
 
 function rotateX(matrix, degrees){
     const radians = degrees * (180 / Math.PI);
@@ -180,23 +180,23 @@ function rotateX(matrix, degrees){
     return multiply(transformation_matrix, matrix);
 }
 
-function rotateY(point, degrees){
-    const radians = angle * (180 / Math.PI);
+function rotateY(matrix, degrees){
+    const radians = degrees * (180 / Math.PI);
     const cos = Math.cos(radians);
     const sin = Math.sin(radians);
     let transformation_matrix = [cos,0,-1*sin,0,  0,1,0,0,  sin,0,cos,0,  0,0,0,1];
     return multiply(transformation_matrix, matrix);
 }
 
-function rotateZ(point, degrees){
-    const radians = angle * (180 / Math.PI);
+function rotateZ(matrix, degrees){
+    const radians = degrees * (180 / Math.PI);
     const cos = Math.cos(radians);
     const sin = Math.sin(radians);
     let transformation_matrix = [cos,sin,0,0,  -1*sin,cos,0,0,  0,0,1,0   ,0,0,0,1];
     return multiply(transformation_matrix, matrix);
 }
 
-function scale(point, x, y, z){
+function scale(matrix, x, y, z){
     let transformation_matrix = [x,0,0,0, 0,y,0,0, 0,0,z,0, 0,0,0,1];
     return multiply(transformation_matrix, matrix);
 }
@@ -279,8 +279,9 @@ function onStartFrame(t, state) {
     gl.uniform1f(state.uMaterialsLoc[2].index_of_refrac   , 2.8);
 
     const identity_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1];
-    const octa_matrix = rotateX([1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1], 90);
-    console.log(octa_matrix);
+    let octa_matrix = rotateZ(scale([1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1], 0.5, 2, 2),time/100);
+    // octa_matrix = translate(octa_matrix, 0, 0, 5);
+    // console.log(octa_matrix);
 
     gl.uniform1f(state.uShapesLoc[0].type , 0);
     gl.uniform3fv(state.uShapesLoc[0].center , [.6,.7,4 - 2.*Math.sin(time)]);
