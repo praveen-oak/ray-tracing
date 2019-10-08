@@ -280,8 +280,7 @@ function onStartFrame(t, state) {
 
     const identity_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1];
     let octa_matrix = rotateZ(scale([1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1], 0.5, 2, 2),time/100);
-    // octa_matrix = translate(octa_matrix, 0, 0, 5);
-    // console.log(octa_matrix);
+    let cube_matrix = rotateX(rotateZ(scale([1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1], 2, 1, 0.7),time/60), time/80);
 
     gl.uniform1f(state.uShapesLoc[0].type , 0);
     gl.uniform3fv(state.uShapesLoc[0].center , [.6,.7,4 - 2.*Math.sin(time)]);
@@ -293,7 +292,7 @@ function onStartFrame(t, state) {
     gl.uniform3fv(state.uShapesLoc[1].center , [-.4,.7,4.+2.*Math.sin(time)]);
     gl.uniform1f(state.uShapesLoc[1].radius, 0.3);
     gl.uniformMatrix4fv(state.uShapesLoc[1].matrix , false, identity_matrix);
-    gl.uniformMatrix4fv(state.uShapesLoc[1].imatrix , false, inverse(identity_matrix));
+    gl.uniformMatrix4fv(state.uShapesLoc[1].imatrix , false, inverse(cube_matrix));
 
     gl.uniform1f(state.uShapesLoc[2].type , 2);
     gl.uniform3fv(state.uShapesLoc[2].center , [-.4,.5+Math.sin(time),2.]);

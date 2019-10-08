@@ -67,27 +67,6 @@ void fill_half_space_info(float radius, int shape_index){
     octahedron_half_space[7] = vec4(pos, pos, pos, neg_radius)*uShapes[shape_index].imatrix;
 }
 
-// void fill_half_space_info(float radius){
-//     float neg_radius = -1.*radius;
-//     cube_half_space[0] = vec4(-1., 0., 0., neg_radius);
-//     cube_half_space[1] = vec4(1., 0., 0., neg_radius);
-//     cube_half_space[2] = vec4(0., -1., 0., neg_radius);
-//     cube_half_space[3] = vec4(0., 1., 0., neg_radius);
-//     cube_half_space[4] = vec4(0., 0., -1., neg_radius);
-//     cube_half_space[5] = vec4(0., 0., 1., neg_radius);
-
-//     float pos = 0.5773;
-//     float neg = -0.5773;
-//     octahedron_half_space[0] = vec4(neg, neg, neg, neg_radius);
-//     octahedron_half_space[1] = vec4(neg, neg, pos, neg_radius);
-//     octahedron_half_space[2] = vec4(neg, pos, neg, neg_radius);
-//     octahedron_half_space[3] = vec4(neg, pos, pos, neg_radius);
-//     octahedron_half_space[4] = vec4(pos, neg, neg, neg_radius);
-//     octahedron_half_space[5] = vec4(pos, neg, pos, neg_radius);
-//     octahedron_half_space[6] = vec4(pos, pos, neg, neg_radius);
-//     octahedron_half_space[7] = vec4(pos, pos, pos, neg_radius);
-// }
-
 vec2 ray_trace_half_space(vec3 v, vec3 w, vec4 plane){
     float point_dot_product = dot(plane, vec4(v, 1.));
     float ray_dot_product = dot(plane, vec4(w, 0.));
@@ -248,6 +227,48 @@ vec3 total_specular_light(int shape_index, vec3 surface, vec3 w, vec3 surface_no
 }
 
 vec3 reflected_light(int shape_index, vec3 surface_point, vec3 surface_normal, vec3 w){
+    
+    vec3 reflected_w = normal(w-2.*dot(surface_normal, w)*surface_normal);
+    //check if this reflected ray hits any other shape
+    
+    float temp_t;
+    float min_t = NULL;
+    int min_i;
+    vec4 min_vec;
+    vec4 temp_vec;
+    for(int i = 0; i < NS; i++){
+        temp_vec = ray_shape(surface_point, reflected_w, i);
+       temp_t = temp_vec.x;
+       if(temp_t > 0.001){
+            if(min_t == NULL || temp_t < min_t){
+                min_t = temp_t;
+                min_i = i;
+                min_vec = temp_vec;
+            }
+       }
+    }
+    if(min_t == NULL){
+        return vec3(0., 0., 0.);
+    }
+
+    vec3 reflected_surface = surface_point + min_t*reflected_w;
+    vec3 reflected_surface_normal;
+    if(uShapes[min_i].type == 0.){
+        reflected_surface_normal = normal(reflected_surface - uShapes[min_i].radius);
+    }else if(uShapes[min_i].type == 1.){
+        highp int front_surface_plane = int(min_vec.z);
+        reflected_surface_normal = cube_half_space[front_surface_plane].xyz;
+    }
+    else if(uShapes[min_i].type == 2.){
+        highp int front_surface_plane = int(min_vec.z);
+        reflected_surface_normal = octahedron_half_space[front_surface_plane].xyz;
+    }
+
+    vec3 reflected_light = total_specular_light(min_i, reflected_surface, reflected_w, reflected_surface_normal);
+    return uMaterials[min_i].reflection_factor*reflected_light;
+}
+
+vec3 refracted_light(int shape_index, vec3 surface_point, vec3 surface_normal, vec3 w){
     
     vec3 reflected_w = normal(w-2.*dot(surface_normal, w)*surface_normal);
     //check if this reflected ray hits any other shape
