@@ -255,28 +255,28 @@ function onStartFrame(t, state) {
 
     gl.uniform1f(state.uTimeLoc, time);
     gl.uniform3fv(state.uMaterialsLoc[0].ambient , [.0,.0,.0]);
-    gl.uniform3fv(state.uMaterialsLoc[0].diffuse , [.1,.4,.2]);
-    gl.uniform3fv(state.uMaterialsLoc[0].specular, [0.5,.5,.5]);
-    gl.uniform1f(state.uMaterialsLoc[0].power   , 20);
+    gl.uniform3fv(state.uMaterialsLoc[0].diffuse , [.7,.7,.7]);
+    gl.uniform3fv(state.uMaterialsLoc[0].specular, [0.9,.9,.9]);
+    gl.uniform1f(state.uMaterialsLoc[0].power   , 6);
     gl.uniform1f(state.uMaterialsLoc[0].reflection_factor   , .2);
-    gl.uniform1f(state.uMaterialsLoc[0].refraction_factor   , 1.);
-    gl.uniform1f(state.uMaterialsLoc[0].index_of_refrac   , 2.8);
+    gl.uniform1f(state.uMaterialsLoc[0].refraction_factor   , .2);
+    gl.uniform1f(state.uMaterialsLoc[0].index_of_refrac   , 1.1);
 
-    gl.uniform3fv(state.uMaterialsLoc[1].ambient , [.03,.03,.0]);
-    gl.uniform3fv(state.uMaterialsLoc[1].diffuse , [0.1,.1,.0]);
+    gl.uniform3fv(state.uMaterialsLoc[1].ambient , [.0,.0,.0]);
+    gl.uniform3fv(state.uMaterialsLoc[1].diffuse , [0.,.4,.0]);
     gl.uniform3fv(state.uMaterialsLoc[1].specular, [0.5,.5,.5]);
     gl.uniform1f(state.uMaterialsLoc[1].power   , 20);
     gl.uniform1f(state.uMaterialsLoc[1].reflection_factor   , .2);
-    gl.uniform1f(state.uMaterialsLoc[1].refraction_factor   , 1.);
-    gl.uniform1f(state.uMaterialsLoc[1].index_of_refrac   , 2.8);
+    gl.uniform1f(state.uMaterialsLoc[1].refraction_factor   , .2);
+    gl.uniform1f(state.uMaterialsLoc[1].index_of_refrac   , 1.8);
 
-    gl.uniform3fv(state.uMaterialsLoc[2].ambient , [.2,.0,.0]);
-    gl.uniform3fv(state.uMaterialsLoc[2].diffuse , [0.8,.0,.0]);
+    gl.uniform3fv(state.uMaterialsLoc[2].ambient , [.02,.0,.0]);
+    gl.uniform3fv(state.uMaterialsLoc[2].diffuse , [0.2,.0,.0]);
     gl.uniform3fv(state.uMaterialsLoc[2].specular, [0.5,.5,.2]);
     gl.uniform1f(state.uMaterialsLoc[2].power   , 20);
-    gl.uniform1f(state.uMaterialsLoc[2].reflection_factor   , .2);
-    gl.uniform1f(state.uMaterialsLoc[2].refraction_factor   , 1.);
-    gl.uniform1f(state.uMaterialsLoc[2].index_of_refrac   , 2.8);
+    gl.uniform1f(state.uMaterialsLoc[2].reflection_factor   , .7);
+    gl.uniform1f(state.uMaterialsLoc[2].refraction_factor   , .7);
+    gl.uniform1f(state.uMaterialsLoc[2].index_of_refrac   , 1.8);
 
     const identity_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1];
     let octa_matrix = rotateZ(scale([1,0,0,0, 0,1,0,0, 0,0,1,0,  0,0,0,1], 0.5, 2, 2),time/100);
@@ -289,13 +289,13 @@ function onStartFrame(t, state) {
     gl.uniformMatrix4fv(state.uShapesLoc[0].imatrix , false, inverse(identity_matrix));
 
     gl.uniform1f(state.uShapesLoc[1].type , 1);
-    gl.uniform3fv(state.uShapesLoc[1].center , [-.4,.7,4.+2.*Math.sin(time)]);
+    gl.uniform3fv(state.uShapesLoc[1].center , [-.4,.7,4.+Math.sin(time)]);
     gl.uniform1f(state.uShapesLoc[1].radius, 0.3);
     gl.uniformMatrix4fv(state.uShapesLoc[1].matrix , false, identity_matrix);
     gl.uniformMatrix4fv(state.uShapesLoc[1].imatrix , false, inverse(cube_matrix));
 
     gl.uniform1f(state.uShapesLoc[2].type , 2);
-    gl.uniform3fv(state.uShapesLoc[2].center , [-.4,.5+Math.sin(time),2.]);
+    gl.uniform3fv(state.uShapesLoc[2].center , [-.4,.2+Math.sin(time),2.]);
     gl.uniform1f(state.uShapesLoc[2].radius, 0.3);
     gl.uniformMatrix4fv(state.uShapesLoc[2].matrix , false, octa_matrix);
     gl.uniformMatrix4fv(state.uShapesLoc[2].imatrix , false, inverse(octa_matrix));

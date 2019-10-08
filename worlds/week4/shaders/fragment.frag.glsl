@@ -17,7 +17,7 @@ struct Material {
 };
 
 struct Shape {
-      float   type;   // 0 for sphere. 1,2,etc for other kinds of shapes.
+      float   type;   // 0 for sphere. 1 = square,2 = octahedron,etc for other kinds of shapes.
       vec3  center;
       float radius;
       mat4 matrix;
@@ -46,6 +46,7 @@ float directional_dot_product(vec3 vector_1, vec3 vector_2){
      return dot(normal(vector_1), normal(vector_2));
 }
 
+//fills the half spaces for both cube and octahedron that is centered around the origin with a given radius/size
 void fill_half_space_info(float radius, int shape_index){
     float neg_radius = -1.*radius;
     cube_half_space[0] = vec4(-1., 0., 0., neg_radius)*uShapes[shape_index].imatrix;
@@ -67,6 +68,8 @@ void fill_half_space_info(float radius, int shape_index){
     octahedron_half_space[7] = vec4(pos, pos, pos, neg_radius)*uShapes[shape_index].imatrix;
 }
 
+
+//computes t and p dot v for a given plane and a ray
 vec2 ray_trace_half_space(vec3 v, vec3 w, vec4 plane){
     float point_dot_product = dot(plane, vec4(v, 1.));
     float ray_dot_product = dot(plane, vec4(w, 0.));
@@ -76,8 +79,10 @@ vec2 ray_trace_half_space(vec3 v, vec3 w, vec4 plane){
     return vec2(t, point_dot_product);
 }
 
+//traces a octahedron
 vec4 ray_shape_octahedron(vec3 v, vec3 w, int shape_index){
     vec3 v_altered = v- uShapes[shape_index].center;
+    //fill global octahedron plane array with required values before asking ray_trace_half_space to compute the intersection
     fill_half_space_info(uShapes[shape_index].radius, shape_index);
     float tmin = -1000.;
     float tmax = 1000.;
@@ -116,6 +121,8 @@ vec4 ray_shape_octahedron(vec3 v, vec3 w, int shape_index){
         return vec4(NULL, NULL, NULL, NULL);
     }
 }
+
+//same as octahedron but works on cube
 
 vec4 ray_shape_cube(vec3 v, vec3 w, int shape_index){
     vec3 v_altered = v- uShapes[shape_index].center;
@@ -268,18 +275,40 @@ vec3 reflected_light(int shape_index, vec3 surface_point, vec3 surface_normal, v
     return uMaterials[min_i].reflection_factor*reflected_light;
 }
 
+vec3 refract_ray(int shape_index, vec3 w, vec3 surface_point, vec3 surface_normal, float index_of_refraction){
+    vec3 surface_normal_parallel_vector = dot(w, surface_normal)*surface_normal;
+    vec3 surface_normal_orthogonal_vector = w - surface_normal_parallel_vector;
+    vec3 altered_orthogonal = surface_normal_orthogonal_vector/index_of_refraction;
+    vec3 altered_parallel = -1.*surface_normal*sqrt(1. - dot(altered_orthogonal, altered_orthogonal));
+    return normal(altered_parallel + altered_orthogonal);
+}
+
+
 vec3 refracted_light(int shape_index, vec3 surface_point, vec3 surface_normal, vec3 w){
-    
-    vec3 reflected_w = normal(w-2.*dot(surface_normal, w)*surface_normal);
-    //check if this reflected ray hits any other shape
-    
+    vec3 refracted_ray = refract_ray(shape_index, w, surface_point, surface_normal, uMaterials[shape_index].index_of_refrac);
+    vec4 refracted_vec = ray_shape(surface_point - refracted_ray/1000., refracted_ray, shape_index);
+    vec3 refracted_normal;
+    vec3 refracted_surface = surface_point + refracted_vec.y*refracted_ray;
+    if(uShapes[shape_index].type == 0.){
+        refracted_normal = normal(refracted_surface - uShapes[shape_index].center);
+    }else if(uShapes[shape_index].type == 1.){
+        highp int back_surface_plane = int(refracted_vec.w);
+        refracted_normal = cube_half_space[back_surface_plane].xyz;
+    }else{
+        highp int back_surface_plane = int(refracted_vec.w);
+        refracted_normal = octahedron_half_space[back_surface_plane].xyz;
+    }
+
+    vec3 second_refracted_ray = refract_ray( shape_index, refracted_ray, refracted_surface, refracted_normal, 1./uMaterials[shape_index].index_of_refrac);
+
+
     float temp_t;
     float min_t = NULL;
     int min_i;
     vec4 min_vec;
     vec4 temp_vec;
     for(int i = 0; i < NS; i++){
-        temp_vec = ray_shape(surface_point, reflected_w, i);
+        temp_vec = ray_shape(refracted_surface, second_refracted_ray, i);
        temp_t = temp_vec.x;
        if(temp_t > 0.001){
             if(min_t == NULL || temp_t < min_t){
@@ -293,22 +322,23 @@ vec3 refracted_light(int shape_index, vec3 surface_point, vec3 surface_normal, v
         return vec3(0., 0., 0.);
     }
 
-    vec3 reflected_surface = surface_point + min_t*reflected_w;
-    vec3 reflected_surface_normal;
+    vec3 to_be_shaded_surface = refracted_surface + min_t*second_refracted_ray;
+    vec3 to_be_shaded_surface_normal;
     if(uShapes[min_i].type == 0.){
-        reflected_surface_normal = normal(reflected_surface - uShapes[min_i].radius);
+        to_be_shaded_surface_normal = normal(to_be_shaded_surface - uShapes[min_i].radius);
     }else if(uShapes[min_i].type == 1.){
         highp int front_surface_plane = int(min_vec.z);
-        reflected_surface_normal = cube_half_space[front_surface_plane].xyz;
+        to_be_shaded_surface_normal = cube_half_space[front_surface_plane].xyz;
     }
     else if(uShapes[min_i].type == 2.){
         highp int front_surface_plane = int(min_vec.z);
-        reflected_surface_normal = octahedron_half_space[front_surface_plane].xyz;
+        to_be_shaded_surface_normal = octahedron_half_space[front_surface_plane].xyz;
     }
 
-    vec3 reflected_light = total_specular_light(min_i, reflected_surface, reflected_w, reflected_surface_normal);
-    return uMaterials[min_i].reflection_factor*reflected_light;
+    vec3 refracted_light = total_specular_light(min_i, to_be_shaded_surface, second_refracted_ray, to_be_shaded_surface_normal);
+    return uMaterials[min_i].refraction_factor*refracted_light;
 }
+
 
 vec3 shade_pixel(vec3 v, vec3 w){
     vec4 temp;
@@ -365,6 +395,7 @@ vec3 shade_pixel(vec3 v, vec3 w){
             total_light = total_light + diffuse_light(i, min_i, surface, surface_normal);
             total_light = total_light + specular_light(i, min_i,surface,w, surface_normal);
             total_light = total_light + reflected_light(i, surface, surface_normal, w);
+            total_light = total_light + refracted_light(i, surface, surface_normal, w);
         } 
     }
     return total_light;
